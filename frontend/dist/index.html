@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Voice Sentiment Analysis - Real-time emotion detection from your voice">
+    <title>Voice Sentiment Analysis</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Socket.IO for WebSocket communication -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <!-- Custom styles -->
+  <script type="module" crossorigin src="./assets/main-Dfq0XQ4N.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/main-Cz_9pgww.css">
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen text-white">
+    
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <div class="flex items-center justify-center gap-3 mb-2">
+                <svg class="w-10 h-10 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z">
+                    </path>
+                </svg>
+                <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                    Voice Sentiment Analysis
+                </h1>
+            </div>
+            <p class="text-gray-400">Real-time emotion detection powered by AI</p>
+            
+            <!-- Status indicator -->
+            <div class="mt-4 flex items-center justify-center gap-2">
+                <span id="connection-status" class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-yellow-500/20 text-yellow-400">
+                    <span class="w-2 h-2 bg-yellow-400 rounded-full mr-2 animate-pulse"></span>
+                    Connecting...
+                </span>
+            </div>
+        </header>
+
+        <!-- Main Content Grid -->
+        <div class="grid lg:grid-cols-2 gap-8">
+            
+            <!-- Left Column: Recording -->
+            <div class="space-y-6">
+                
+                <!-- Recording Mode Selection -->
+                <div class="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z">
+                            </path>
+                        </svg>
+                        Recording Mode
+                    </h2>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <button id="btn-record-file" 
+                                class="mode-btn active p-4 rounded-xl bg-purple-600 hover:bg-purple-500 transition-all text-center border-2 border-purple-500"
+                                data-mode="file">
+                            <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                                </path>
+                            </svg>
+                            <span class="font-medium">Upload Audio</span>
+                        </button>
+                        <button id="btn-record-mic" 
+                                class="mode-btn p-4 rounded-xl bg-white/10 hover:bg-white/20 transition-all text-center border-2 border-transparent"
+                                data-mode="mic">
+                            <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                      d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z">
+                                </path>
+                            </svg>
+                            <span class="font-medium">Live Recording</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- File Upload Panel -->
+                <div id="panel-file-upload" class="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10">
+                    <h2 class="text-xl font-semibold mb-4">Upload Audio File</h2>
+                    
+                    <div id="drop-zone" class="border-2 border-dashed border-purple-500/50 rounded-xl p-8 text-center cursor-pointer hover:border-purple-400 hover:bg-purple-500/10 transition-all">
+                        <svg class="w-12 h-12 mx-auto mb-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12">
+                            </path>
+                        </svg>
+                        <p class="text-gray-300 mb-2">Drag & drop an audio file here</p>
+                        <p class="text-gray-500 text-sm">or click to browse</p>
+                        <input type="file" id="file-input" accept="audio/*" class="hidden">
+                    </div>
+                    
+                    <div id="file-info" class="mt-4 hidden">
+                        <div class="flex items-center gap-3 bg-white/5 rounded-lg p-3">
+                            <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+                                </path>
+                            </svg>
+                            <div class="flex-1">
+                                <p id="file-name" class="font-medium text-sm truncate">filename.mp3</p>
+                                <p id="file-size" class="text-xs text-gray-400">1.2 MB</p>
+                            </div>
+                            <button id="btn-remove-file" class="text-gray-400 hover:text-red-400">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                          d="M6 18L18 6M6 6l12 12">
+                                    </path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button id="btn-analyze-file" 
+                            class="mt-4 w-full py-3 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-xl font-medium transition-all flex items-center justify-center gap-2"
+                            disabled>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                            </path>
+                        </svg>
+                        Analyze Audio
+                    </button>
+                </div>
+
+                <!-- Microphone Recording Panel -->
+                <div id="panel-mic-recording" class="hidden bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10">
+                    <h2 class="text-xl font-semibold mb-4">Live Recording</h2>
+                    
+                    <!-- Visualizer -->
+                    <div class="bg-slate-800 rounded-xl p-4 mb-4">
+                        <canvas id="audio-visualizer" class="w-full h-24 rounded-lg"></canvas>
+                    </div>
+                    
+                    <!-- Recording Controls -->
+                    <div class="flex items-center justify-center gap-4 mb-4">
+                        <button id="btn-start-recording" 
+                                class="w-16 h-16 rounded-full bg-red-600 hover:bg-red-500 flex items-center justify-center transition-all shadow-lg shadow-red-600/30">
+                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                                <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                            </svg>
+                        </button>
+                        <button id="btn-stop-recording" 
+                                class="hidden w-16 h-16 rounded-full bg-gray-600 hover:bg-gray-500 flex items-center justify-center transition-all">
+                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                                <rect x="6" y="6" width="12" height="12" rx="2"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <p id="recording-status" class="text-center text-gray-400 text-sm">
+                        Click the microphone to start recording
+                    </p>
+                    
+                    <!-- Recording Duration -->
+                    <div id="recording-duration" class="hidden text-center mt-2">
+                        <span class="text-2xl font-mono text-red-400">
+                            <span id="rec-time">00:00</span>
+                        </span>
+                        <span class="text-red-500 ml-2 animate-pulse">● Recording</span>
+                    </div>
+                    
+                    <button id="btn-analyze-stream" 
+                            class="mt-4 w-full py-3 bg-purple-600 hover:bg-purple-500 disabled:bg-gray-600 disabled:cursor-not-allowed rounded-xl font-medium transition-all flex items-center justify-center gap-2"
+                            disabled>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4">
+                            </path>
+                        </svg>
+                        Analyze Recording
+                    </button>
+                </div>
+
+                <!-- Processing Status -->
+                <div id="processing-status" class="hidden bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10">
+                    <div class="flex items-center justify-center gap-4">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+                        <div>
+                            <p class="font-medium">Processing audio...</p>
+                            <p id="processing-step" class="text-sm text-gray-400">Initializing...</p>
+                        </div>
+                    </div>
+                    <div class="mt-4 bg-gray-700 rounded-full h-2 overflow-hidden">
+                        <div id="progress-bar" class="bg-purple-500 h-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Column: Results -->
+            <div class="space-y-6">
+                
+                <!-- Transcription Result -->
+                <div id="transcription-panel" class="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 hidden">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                            </path>
+                        </svg>
+                        Transcription
+                    </h2>
+                    <div class="bg-slate-800/50 rounded-xl p-4">
+                        <p id="transcription-text" class="text-gray-200 leading-relaxed">
+                            Transcribed text will appear here...
+                        </p>
+                    </div>
+                    <div class="mt-2 flex items-center gap-2 text-sm text-gray-400">
+                        <span id="detected-language" class="bg-white/10 px-2 py-1 rounded">EN</span>
+                        <span id="transcription-time" class="ml-auto"></span>
+                    </div>
+                </div>
+
+                <!-- Sentiment Result -->
+                <div id="sentiment-panel" class="bg-white/5 backdrop-blur-lg rounded-2xl p-6 border border-white/10 hidden">
+                    <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                            </path>
+                        </svg>
+                        Sentiment Analysis
+                    </h2>
+                    
+                    <!-- Dominant Emotion -->
+                    <div class="text-center mb-6">
+                        <div id="dominant-emotion" class="inline-flex items-center gap-3 bg-gradient-to-r from-purple-600/30 to-pink-600/30 px-6 py-3 rounded-xl border border-purple-500/30">
+                            <span id="emotion-emoji" class="text-3xl">😊</span>
+                            <div class="text-left">
+                                <p class="text-xs text-gray-400 uppercase tracking-wider">Detected Emotion</p>
+                                <p id="emotion-label" class="text-xl font-bold capitalize">joy</p>
+                            </div>
+                        </div>
+                        <p class="mt-2 text-sm text-gray-400">
+                            Confidence: <span id="emotion-confidence" class="text-purple-400 font-medium">94%</span>
+                        </p>
+                    </div>
+                    
+                    <!-- Emotions Chart -->
+                    <div class="h-48 mb-4">
+                        <canvas id="emotions-chart"></canvas>
+                    </div>
+                    
+                    <!-- Emotion Bars -->
+                    <div id="emotion-bars" class="space-y-3">
+                        <!-- Bars will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="empty-state" class="bg-white/5 backdrop-blur-lg rounded-2xl p-12 border border-white/10 text-center">
+                    <svg class="w-20 h-20 mx-auto mb-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" 
+                              d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3">
+                        </path>
+                    </svg>
+                    <h3 class="text-xl font-medium mb-2">No Analysis Yet</h3>
+                    <p class="text-gray-400">Upload an audio file or start a live recording to analyze sentiment</p>
+                </div>
+
+                <!-- Error Panel -->
+                <div id="error-panel" class="hidden bg-red-500/10 backdrop-blur-lg rounded-2xl p-6 border border-red-500/30">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-6 h-6 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                            </path>
+                        </svg>
+                        <div>
+                            <h3 class="font-medium text-red-400">Analysis Failed</h3>
+                            <div id="error-message" class="text-sm text-gray-300 mt-1">An error occurred during processing.</div>
+                            <button id="btn-retry" class="mt-3 px-4 py-2 bg-red-600/30 hover:bg-red-600/50 rounded-lg text-sm transition-all">
+                                Try Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 text-center text-gray-500 text-sm">
+            <p>Powered by OpenAI Whisper & Transformers</p>
+            <p class="mt-1">Voice Sentiment Analysis v1.0</p>
+        </footer>
+
+    </div>
+
+    <!-- JavaScript Modules -->
+</body>
+</html>
+
